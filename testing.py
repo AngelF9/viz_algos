@@ -72,7 +72,7 @@ class RunningTimesWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Algorithm Running Times")
-        self.setGeometry(100, 100, 640, 480)  # Set window size and position
+        self.setGeometry(100, 100, 640, 480) 
 
         self.layout = QVBoxLayout()
 
@@ -93,32 +93,27 @@ class RunningTimesWindow(QWidget):
         self.setLayout(self.layout)
 
     def display_running_times(self):
-        array_size = int(self.text_box.text()) if self.text_box.text().isdigit() else 500  # Default to 500 if input is invalid
+        array_size = int(self.text_box.text()) if self.text_box.text().isdigit() else 500  
 
         self.figure.clear()
 
-        # Prepare the subplot
         ax = self.figure.add_subplot(111)
         ax.set_title('Running Times of Sorting Algorithms')
         ax.set_ylabel('Time (seconds)')
         ax.set_xlabel('Algorithm')
 
-        # Generate a random array
         random_array = [randint(0, 100) for _ in range(array_size)]
 
-        # Dictionary to hold execution times
         execution_times = {}
 
-        # Run and time each sorting algorithm
         for algo_name, algo_func in [('Insertion Sort', insertion_sort),
                                      ('Merge Sort', merge_sort),
                                      ('Quick Sort', quick_sort)]:
             start_time = time.perf_counter()
-            list(algo_func(random_array.copy(), key=lambda x: x))  # Run and exhaust the generator
+            list(algo_func(random_array.copy(), key=lambda x: x))  
             end_time = time.perf_counter()
             execution_times[algo_name] = end_time - start_time
 
-        # Plotting
         algorithms = list(execution_times.keys())
         times = list(execution_times.values())
         ax.bar(algorithms, times, color=['blue', 'green', 'red'])
