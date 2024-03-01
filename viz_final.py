@@ -140,7 +140,7 @@ class MainWindow(QWidget):  # creating a class that inherits from QWidget.
             ('Quick Sort', quick_sort),
         ]
         self.current_algorithm_index = -1
-        self.execution_times.clear()  # Clear previous execution times if any
+        self.execution_times.clear()  # clear previous execution times if any
         self.start_next_sort()
         
     def execution_time(self):
@@ -151,7 +151,7 @@ class MainWindow(QWidget):  # creating a class that inherits from QWidget.
             elapsed_time = self.start_time.elapsed() / 1000.0  # Convert to seconds
             algo_name, _ = self.sorting_algorithms[self.current_algorithm_index]
             self.execution_times[algo_name] = elapsed_time
-            self.timer.disconnect()  # Disconnect the timer signal to prevent multiple calls.
+            self.timer.disconnect()  # disconnect the timer signal to prevent multiple calls.
             self.start_next_sort() # start the first sorting algorithm
 
     def start_next_sort(self):
@@ -161,8 +161,8 @@ class MainWindow(QWidget):  # creating a class that inherits from QWidget.
             self.setWindowTitle(algo_name)
             self.generator = algo_func(self.array_list.copy())
             self.start_time = QTime.currentTime()
-            self.timer.timeout.connect(self.execution_time)  # Ensure connection is made here if not already connected
-            self.timer.start(100)  # Consider using a shorter interval for smoother animation.
+            self.timer.timeout.connect(self.execution_time)  # ensure connection is made here if not already connected
+            self.timer.start(100)  # consider using a shorter interval for smoother animation.
         else:
             self.timer.stop()
             self.display_execution_times_chart()
