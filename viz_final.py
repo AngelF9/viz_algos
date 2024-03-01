@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLineEdit, QLabel, QComboBox, QTabWidget # importing PyQt5 modules. So we can use the GUI functionality of PyQt5.
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLineEdit, QLabel, QComboBox # importing PyQt5 modules. So we can use the GUI functionality of PyQt5.
 from PyQt5.QtCore import QTimer, QTime # This allows us to display the time in the GUI.
 from PyQt5.QtGui import QPalette, QColor # This allows us to change the background color of the GUI.
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas  # This allows us to display the figure in the GUI by using the canvas.
@@ -71,6 +71,7 @@ def quick_sort(a, l=0, r=None, key=lambda x: x):
     yield from quick_sort(a, l, j-1)
     yield from quick_sort(a, j + 1, r)
 
+
 # ---------------------- GUI ----------------------
 class MainWindow(QWidget):  # creating a class that inherits from QWidget.
     def __init__(self):
@@ -95,16 +96,9 @@ class MainWindow(QWidget):  # creating a class that inherits from QWidget.
         self.canvas = FigureCanvas(self.figure)             # creates a canvas to display the figure.
         self.layout.addWidget(self.canvas)                  # adds the canvas to the layout 'Window'.
 
-        self.execution_times = {}
-        # Add these lines
-        self.tab_widget = QTabWidget()
-        self.layout.addWidget(self.tab_widget)
-        self.execution_times_figure = Figure()
-        self.execution_times_canvas = FigureCanvas(self.execution_times_figure)
-        self.tab_widget.addTab(self.canvas, "Sorting")
-        self.tab_widget.addTab(self.execution_times_canvas, "Execution Times")
-
         self.setLayout(self.layout)                         # sets the layout of the window.               
+
+        self.execution_times = {}
 
         self.array_size = 0
         self.array_list = []
@@ -118,26 +112,27 @@ class MainWindow(QWidget):  # creating a class that inherits from QWidget.
         ax.bar(range(len(arr)), arr, color='b')             # creates a bar chart with the array values.
         self.canvas.draw()   
     
-    def start_next_sort(self):
-        self.current_algorithm_index += 1
-        if self.current_algorithm_index < len(self.sorting_algorithms):
-            algo_name, algo_func = self.sorting_algorithms[self.current_algorithm_index]
-            self.setWindowTitle(algo_name)  # set the window title to the name of the current sorting algorithm
-            self.generator = algo_func(self.array_list.copy(), key=lambda x: x)
-            self.figure.clear()                                 # clears the figure.
-            # ... rest of the code to initialize the plot ...
-            self.start_time = QTime.currentTime()
-            self.timer.start(1000) # start the timer
-        else:
-            self.timer.stop()                               # draws the canvas.
-            self.draw_execution_times()                               # draws the canvas.
+
+    def display_execution_times_chart(self):
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
+
+        algorithms = list(self.execution_times.keys())
+        times =[self.execution_times[algo] for algo in algorithms]
+
+        #plot
+        ax.bar(algorithms, times, color='skyblue')
+        ax.set_title('Execution Times')
+        ax.set_xlabel('Algorithm')
+        ax.set_ylabel('Time (s)')
+        self.canvas.draw()
 
     def generate_random_array(self): # generates a random array
         self.array_size = int(self.text_box.text()) # gets the text from the text box and converts it to an integer
         self.array_list = [randint(0, 50) for _ in range(self.array_size)] # generates a list of random numbers with values between 0 and 50        
 
-    def animate_sort(self): # function to animate the sorting
-        self.generate_random_array() # generates a random array
+    def animate_sort(self):  # function to animate the sorting
+        self.generate_random_array()  # generates a random array
 
         self.sorting_algorithms = [
             ('Insertion Sort', insertion_sort),
@@ -145,28 +140,33 @@ class MainWindow(QWidget):  # creating a class that inherits from QWidget.
             ('Quick Sort', quick_sort),
         ]
         self.current_algorithm_index = -1
-
+        self.execution_times.clear()  # Clear previous execution times if any
+        self.start_next_sort()
         
-        def execution_time():
-            try:
-                A = next(self.generator)
-                self.animate(A)
-            except StopIteration:
-                elapsed_time = self.start_time.elapsed() / 1000.0  # Convert to seconds
-                self.execution_time_label.setText(f"Total Execution Time: {elapsed_time:.6f} seconds")
-                algo_name, _ = self.sorting_algorithms[self.current_algorithm_index]
-                self.execution_times[algo_name] = elapsed_time  # Add this line to store the execution time
-                self.start_next_sort()
+    def execution_time(self):
+        try:
+            A = next(self.generator)
+            self.animate(A)
+        except StopIteration:
+            elapsed_time = self.start_time.elapsed() / 1000.0  # Convert to seconds
+            algo_name, _ = self.sorting_algorithms[self.current_algorithm_index]
+            self.execution_times[algo_name] = elapsed_time
+            self.timer.disconnect()  # Disconnect the timer signal to prevent multiple calls.
+            self.start_next_sort() # start the first sorting algorithm
 
-        self.timer.timeout.connect(execution_time) # connect the timer to the execution_time function
+    def start_next_sort(self):
+        self.current_algorithm_index += 1
+        if self.current_algorithm_index < len(self.sorting_algorithms):
+            algo_name, algo_func = self.sorting_algorithms[self.current_algorithm_index]
+            self.setWindowTitle(algo_name)
+            self.generator = algo_func(self.array_list.copy())
+            self.start_time = QTime.currentTime()
+            self.timer.timeout.connect(self.execution_time)  # Ensure connection is made here if not already connected
+            self.timer.start(100)  # Consider using a shorter interval for smoother animation.
+        else:
+            self.timer.stop()
+            self.display_execution_times_chart()
 
-        self.start_next_sort() # start the first sorting algorithm
-
-    def draw_execution_times(self):  # Add this method to draw the execution times
-        self.execution_times_figure.clear()
-        ax = self.execution_times_figure.add_subplot(111)
-        ax.bar(self.execution_times.keys(), self.execution_times.values(), color='b')
-        self.execution_times_canvas.draw()
 
 # ---------------------- Main ----------------------
 if __name__ == "__main__":
